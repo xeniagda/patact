@@ -1,30 +1,44 @@
 #![feature(box_syntax, box_patterns)]
 
-mod math_types;
-use math_types::MExpr::*;
+pub mod math_logic;
+use math_logic::math_types::MExpr::*;
 
 
 fn main() {
-    let mut exprs = [
+    let mut exprs = vec! [
         Sum(vec![
-                   ConstVar(0),
-                   ConstNum(10),
-                   Prod(vec![ Var(0), ConstNum(10) ])
+            ConstVar(0),
+            ConstNum(10),
+            Prod(vec![ Var(0), ConstNum(10) ])
         ]),
         Exp(
             box Sum(vec![ ConstVar(0), ConstNum(10) ]),
-            box ConstNum(2)),
+            box ConstNum(2)
+           ),
         ConstVar(0),
-        Sum(vec![ 
-                   ConstVar(0),
-                   ConstNum(10) 
+        Sum(vec![
+            ConstVar(0),
+            ConstNum(10)
         ]),
-        Sum(vec![ 
-                   ConstVar(0),
-                   ConstNum(11) 
+        Prod(vec![
+             Sum(vec![ConstNum(5), ConstNum(3)]),
+             ConstNum(10)
+        ]),
+        Sum(vec![
+            ConstVar(0),
+            ConstNum(11)
+        ]),
+        Sum(vec![
+            ConstNum(3),
+            ConstVar(0),
+            ConstNum(11)
+        ]),
+        Sum(vec![
+            Prod(vec![ Var(0), ConstNum(10) ]),
+            Prod(vec![ Var(0), ConstNum(5) ])
         ]),
     ];
-    
+
 
 
     for element in &exprs {
@@ -35,5 +49,9 @@ fn main() {
 
     for element in &exprs {
         println!("Sorted: {}", element);
+    }
+
+    for element in &exprs {
+        println!("{} -> {}", element, element.clone().reduce());
     }
 }

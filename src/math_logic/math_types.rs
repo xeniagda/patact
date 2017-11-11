@@ -47,7 +47,7 @@ impl Ord for MExpr {
 
                     (&MExpr::ConstNum(x), &MExpr::ConstNum(y)) => x.cmp(&y),
                     (&MExpr::ConstFl(x), &MExpr::ConstFl(y)) => x.partial_cmp(&y).unwrap_or(Ordering::Equal),
-                      (&MExpr::Sum(ref x), &MExpr::Sum(ref y)) 
+                      (&MExpr::Sum(ref x), &MExpr::Sum(ref y))
                     | (&MExpr::Prod(ref x), &MExpr::Prod(ref y)) => {
                         for (a, b) in x.iter().zip(y.iter()) {
                             match a.cmp(b) {
@@ -78,7 +78,7 @@ impl PartialOrd for MExpr {
                     (&MExpr::ConstNum(x), &MExpr::ConstNum(y)) => x.partial_cmp(&y),
                     (&MExpr::ConstFl(x), &MExpr::ConstFl(y)) => x.partial_cmp(&y),
 
-                      (&MExpr::Sum(ref x), &MExpr::Sum(ref y)) 
+                      (&MExpr::Sum(ref x), &MExpr::Sum(ref y))
                     | (&MExpr::Prod(ref x), &MExpr::Prod(ref y)) => {
                         for (a, b) in x.iter().zip(y.iter()) {
                             match a.partial_cmp(b) {
@@ -150,7 +150,12 @@ impl Display for MExpr {
                 Ok(())
             }
             MExpr::Prod(ref terms) => {
+                let mut first = true;
                 for term in terms {
+                    if !first {
+                        write!(fmt, "*")?
+                    }
+                    first = false;
                     if term.ord_num() <= self.ord_num() {
                         write!(fmt, "({})", term)?
                     } else {
