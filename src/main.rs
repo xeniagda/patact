@@ -37,6 +37,14 @@ fn main() {
             Prod(vec![ Var(0), ConstNum(10) ]),
             Prod(vec![ Var(0), ConstNum(5) ])
         ]),
+        Div(
+            box ConstNum(4),
+            box ConstNum(10),
+           ),
+        Div(
+            box Prod(vec![ ConstVar(0), ConstNum(5) ]),
+            box ConstNum(10),
+           ),
     ];
 
 
@@ -52,6 +60,6 @@ fn main() {
     }
 
     for element in &exprs {
-        println!("{} -> {}", element, element.clone().reduce());
+        println!("{} -> {}", element, element.clone().reduce(true));
     }
 }

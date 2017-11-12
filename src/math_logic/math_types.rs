@@ -12,6 +12,7 @@ const VAR_NAMES: &str = "abcedfghijklmnopqrstuvwxyz";
 pub enum MExpr { // A math expression
     Sum(Vec<MExpr>), // A sum of multiple expressions
     Prod(Vec<MExpr>), // A product of multiple expressions
+    Div(Box<MExpr>, Box<MExpr>),
     Exp(Box<MExpr>, Box<MExpr>),
 
     ConstVar(u32), // A constant variable. Represented by a number, even thought it is usually a letter in normal math
@@ -27,11 +28,12 @@ impl MExpr {
         match *self {
             MExpr::Sum(_) => 0,
             MExpr::Prod(_) => 1,
-            MExpr::Exp(_, _) => 2,
-            MExpr::ConstVar(_) => 3,
-            MExpr::ConstNum(_) => 4,
-            MExpr::ConstFl(_) => 5,
-            MExpr::Var(_) => 6,
+            MExpr::Div(_, _) => 2,
+            MExpr::Exp(_, _) => 3,
+            MExpr::ConstVar(_) => 4,
+            MExpr::ConstNum(_) => 5,
+            MExpr::ConstFl(_) => 6,
+            MExpr::Var(_) => 7,
         }
     }
 }
@@ -172,6 +174,22 @@ impl Display for MExpr {
                 }
 
                 write!(fmt, "^")?;
+
+                if exp.ord_num() <= self.ord_num() {
+                    write!(fmt, "({})", exp)?
+                } else {
+                    write!(fmt, "{}", exp)?
+                }
+                Ok(())
+            }
+            MExpr::Div(box ref base, box ref exp) => {
+                if base.ord_num() <= self.ord_num() {
+                    write!(fmt, "({})", base)?
+                } else {
+                    write!(fmt, "{}", base)?
+                }
+
+                write!(fmt, "/")?;
 
                 if exp.ord_num() <= self.ord_num() {
                     write!(fmt, "({})", exp)?
