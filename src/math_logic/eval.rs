@@ -189,7 +189,7 @@ fn gcd<A>(a: A, b: A) -> A
         A: Copy,
         A: PartialOrd {
 
-    if a == a - a { // Check if a == 0 for all sub types
+            if a == a - a { // Check if a == 0 for all sub types
         b
     }
     else if a > b {
