@@ -1,65 +1,47 @@
 #![feature(box_syntax, box_patterns)]
 
 pub mod math_logic;
-use math_logic::math_types::MExpr::*;
-
+use math_logic::math_types::MExpr;
+use std::io::{stdin, stdout, Result, Write};
 
 fn main() {
-    let mut exprs = vec! [
-        Sum(vec![
-            ConstVar(0),
-            ConstNum(10),
-            Prod(vec![ Var(0), ConstNum(10) ])
-        ]),
-        Exp(
-            box Sum(vec![ ConstVar(0), ConstNum(10) ]),
-            box ConstNum(2)
-           ),
-        ConstVar(0),
-        Sum(vec![
-            ConstVar(0),
-            ConstNum(10)
-        ]),
-        Prod(vec![
-             Sum(vec![ConstNum(5), ConstNum(3)]),
-             ConstNum(10)
-        ]),
-        Sum(vec![
-            ConstVar(0),
-            ConstNum(11)
-        ]),
-        Sum(vec![
-            ConstNum(3),
-            ConstVar(0),
-            ConstNum(11)
-        ]),
-        Sum(vec![
-            Prod(vec![ Var(0), ConstNum(10) ]),
-            Prod(vec![ Var(0), ConstNum(5) ])
-        ]),
-        Div(
-            box ConstNum(4),
-            box ConstNum(10),
-           ),
-        Div(
-            box Prod(vec![ ConstVar(0), ConstNum(5) ]),
-            box ConstNum(10),
-           ),
-    ];
-
-
-
-    for element in &exprs {
-        println!("Element: {}", element);
+    if let Err(e) = repl() {
+        panic!(e);
     }
+}
 
-    exprs.sort();
+fn repl() -> Result<()> {
+    let mut last: Option<MExpr> = None;
 
-    for element in &exprs {
-        println!("Sorted: {}", element);
-    }
+    loop {
+        print!("\n> ");
+        stdout().flush()?;
 
-    for element in &exprs {
-        println!("{} -> {}", element, element.clone().reduce(true));
+        let mut line = String::new();
+        if stdin().read_line(&mut line)? == 0 {
+            println!("");
+            return Ok(())
+        }
+        line = line.trim().to_string();
+        if line == "!" {
+            match last.clone() {
+                None => eprintln!("No last expression"),
+                Some(expr) => {
+                    println!("Last: {:?}", expr);
+                    println!("Reduced: {:?}", expr.reduce(true));
+                }
+            }
+        } else {
+            match line.parse::<MExpr>() {
+                Err(e) => {
+                    eprintln!("Error: {:?}", e);
+                }
+                Ok(expr) => {
+                    println!("Expr: {}", expr);
+                    println!("Reduced: {}", expr.clone().reduce(true));
+                    last = Some(expr);
+                }
+            }
+        }
     }
 }
