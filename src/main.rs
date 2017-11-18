@@ -33,12 +33,15 @@ fn repl() -> Result<()> {
             }
         } else {
             match line.parse::<MExpr>() {
-                Err(e) => {
-                    eprintln!("Error: {:?}", e);
+                Err((msg, idx)) => {
+                    let idx = line.len() - idx;
+                    eprintln!("{}", line);
+                    eprintln!("{}^", " ".repeat(idx));
+                    eprintln!("Error: {:?} at {}", msg, idx);
                 }
                 Ok(expr) => {
-                    println!("Expr: {}", expr);
-                    println!("Reduced: {}", expr.clone().reduce(true));
+                    println!("   Expr:  {}", expr);
+                    println!("Reduced:  {}", expr.clone().reduce(true));
                     last = Some(expr);
                 }
             }

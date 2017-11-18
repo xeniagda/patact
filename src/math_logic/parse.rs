@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 
 impl FromStr for MExpr {
-    type Err = String;
+    type Err = (String, usize); // (msg, length from end)
 
     fn from_str(input: &str) -> Result<MExpr, Self::Err> {
         let input = input.trim();
@@ -13,10 +13,13 @@ impl FromStr for MExpr {
             let mut is_parenthesised = true;
 
             let mut depth = 0u16;
-            for ch in input.chars() {
+            for (i, ch) in input.chars().enumerate() {
                 if ch == '(' {
                     depth += 1;
                 } else if ch == ')' {
+                    if depth == 0 {
+                        return Err(("No matching paren".to_string(), input.len() - i - 1));
+                    }
                     depth -= 1;
                 } else if depth == 0 {
                     is_parenthesised = false;
@@ -24,7 +27,7 @@ impl FromStr for MExpr {
                 }
             }
             if depth != 0 {
-                return Err("Mismatched parethesis".to_string());
+                return Err(("Mismatched parethesis".to_string(), 0));
             }
             if is_parenthesised {
                 let mut x = input.to_string();
@@ -35,7 +38,12 @@ impl FromStr for MExpr {
         }
 
         // Is addition?
-        let mut pluses = find_depth0(&input, |ch| ch == '+', '(', ')');
+        let mut pluses: Vec<usize> = 
+            find_depth0(&input, |ch| ch == '+' || ch == '-', '(', ')')
+                .into_iter()
+                .filter(|x| x != &0usize)
+                .collect();
+
         if !pluses.is_empty() {
             pluses.push(input.len());
             let mut terms = vec![];
@@ -44,10 +52,13 @@ impl FromStr for MExpr {
 
             for term_end in pluses {
                 let term = &input[term_start..term_end];
-
                 terms.push(term.parse::<MExpr>()?);
 
-                term_start = term_end + 1;
+                if input.chars().nth(term_end) == Some('-') {
+                    term_start = term_end;
+                } else {
+                    term_start = term_end + 1;
+                }
             }
             return Ok(MExpr::Sum(terms));
         }
@@ -77,6 +88,13 @@ impl FromStr for MExpr {
             let den = input[divs[0] + 1..].parse::<MExpr>()?;
             return Ok(MExpr::Div(box num, box den));
         }
+        
+        // Is negation?
+        if input.chars().next() == Some('-') {
+            let expr: MExpr = input[1..].parse()?;
+            return Ok(MExpr::Prod(vec![MExpr::ConstNum(-1), expr]));
+        }
+
 
         // Is constant?
         if let Some(ch) = input.chars().next() {
@@ -97,7 +115,7 @@ impl FromStr for MExpr {
             return Ok(MExpr::ConstNum(num));
         }
 
-        Err("Couldn't parse!".to_string())
+        Err(("Unknown operator".to_string(), input.len()))
     }
 }
 
@@ -111,6 +129,9 @@ where
         if ch == delim_start {
             depth += 1;
         } else if ch == delim_end {
+            if depth == 0 {
+                return vec![];
+            }
             depth -= 1;
         } else {
             if depth == 0 && to_find(ch) {
