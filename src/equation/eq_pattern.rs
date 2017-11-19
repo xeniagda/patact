@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 use utils::merge;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EPattern {
     PEq(MPattern, MPattern)
 }

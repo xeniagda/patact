@@ -8,6 +8,7 @@ use expr::exprs::MExpr;
 use expr::expr_pattern::MPattern;
 use equation::equation::MEquation;
 use equation::eq_pattern::EPattern;
+use equation::action::PatternAction;
 use std::io::{stdin, stdout, Result, Write};
 
 fn main() {
@@ -74,6 +75,34 @@ fn repl_eq() -> Result<()> {
                             }
                             Err(_) => {
                                 eprintln!("Couldn't bind!");
+                            }
+                        }
+                    }
+                    _ => {
+                        eprintln!("No last expression!");
+                    }
+                }
+            } else if line.starts_with(":do") || line.starts_with(":Do") {
+                if line.chars().nth(1) == Some('D') {
+                    last = last.map(|e| e.reduce());
+                }
+                let line = line[4..].trim();
+                match (last.clone(), line.parse::<PatternAction>()) {
+                    (_, Err((msg, idx))) => {
+                        let idx = line.len() - idx;
+                        eprintln!("{}", line);
+                        eprintln!("{}^", " ".repeat(idx));
+                        eprintln!("Error: {:?} at {}", msg, idx);
+                    }
+                    (Some(last_), Ok(patact)) => {
+                        match patact.apply(last_) {
+                            Ok(eq) => {
+                                println!("    Res: {}", eq);
+                                println!("Reduced: {}", eq.clone().reduce());
+                                last = Some(eq);
+                            }
+                            Err(_) => {
+                                eprintln!("Couldn't Apply!");
                             }
                         }
                     }
