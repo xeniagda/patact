@@ -6,12 +6,14 @@ use std::collections::HashMap;
 
 use utils::merge;
 
+// A pattern for equations.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EPattern {
     PEq(MPattern, MPattern)
 }
 
 impl EPattern {
+    /// Reduces both sides of the pattern
     pub fn trivial_reduce(self) -> EPattern {
         match self {
             EPattern::PEq(lhs, rhs) => {
@@ -20,6 +22,7 @@ impl EPattern {
         }
     }
 
+    /// Binds both sides of the pattern
     pub fn bind(self, other: MEquation) -> Result<(HashMap<u32, MExpr>, HashMap<u32, MExpr>), ()> {
         let mut const_res: HashMap<u32, MExpr> = HashMap::new();
         let mut var_res:   HashMap<u32, MExpr> = HashMap::new();

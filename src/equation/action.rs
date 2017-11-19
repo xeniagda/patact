@@ -3,6 +3,9 @@ use equation::equation::MEquation;
 use expr::exprs::MExpr;
 use equation::eq_pattern::EPattern;
 
+
+/// A simple action that can be applied to both sides of an equation.
+/// The arguments represent the id of the value/variable to do the action with.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Action {
     AddC(u32),
@@ -16,6 +19,7 @@ pub enum Action {
     DivV(u32),
 }
 
+/// A way to take actions based of patterns
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct PatternAction {
     pub pattern: EPattern,
@@ -23,6 +27,8 @@ pub struct PatternAction {
 }
 
 impl PatternAction {
+
+    /// Applies the action to both sides of an equation
     pub fn apply(self, eq: MEquation) -> Result<MEquation, ()> {
         let (consts, vars) = self.pattern.bind(eq.clone())?;
         match eq {

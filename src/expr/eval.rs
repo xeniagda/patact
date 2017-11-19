@@ -5,6 +5,9 @@ use expr::reduce_sum;
 
 
 impl MExpr {
+
+    /// A very light reduction that only unfolds nested expressions and changes empty sums and
+    /// products
     pub fn trivial_reduce(self) -> MExpr {
         match self.clone() {
             MExpr::Sum(terms) => {
@@ -216,8 +219,7 @@ impl MExpr {
     }
 }
 
-#[allow(unknown_lints)]
-#[allow(eq_op)]
+/// Simple gcd algorithm
 fn gcd(a: i64, b: i64) -> i64 {
     if a < 0 && b < 0 {
         -gcd(-a, -b)

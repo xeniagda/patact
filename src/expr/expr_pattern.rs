@@ -3,6 +3,7 @@ use expr::exprs::MExpr;
 
 use utils::merge;
 
+/// A pattern that matches variables and constants in expressions
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MPattern {
     PConst(u32),

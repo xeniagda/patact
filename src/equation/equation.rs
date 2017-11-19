@@ -2,12 +2,15 @@
 use expr::exprs::MExpr;
 use std::fmt::{Display, Formatter, Error};
 
+
+/// A simple equation. Might add greater-than and less-than in the future.
 #[derive(Debug, Clone)]
 pub enum MEquation {
     Equal(MExpr, MExpr)
 }
 
 impl MEquation {
+    /// Reduces both sides of the equation
     pub fn reduce(self) -> MEquation {
         match self {
             MEquation::Equal(lhs, rhs) => {
@@ -15,6 +18,8 @@ impl MEquation {
             }
         }
     }
+
+    /// Trivially reduces both sides of the equation
     pub fn trivial_reduce(self) -> MEquation {
         match self {
             MEquation::Equal(lhs, rhs) => {
