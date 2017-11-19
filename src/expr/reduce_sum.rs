@@ -1,4 +1,4 @@
-use math_logic::math_types::*;
+use expr::exprs::*;
 
 
 /// Unfolds nested sums, such that eg. `x+(y+z) -> x+y+z`

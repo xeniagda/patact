@@ -1,10 +1,47 @@
 
-use math_logic::math_types::*;
-use math_logic::reduce_prod;
-use math_logic::reduce_sum;
+use expr::exprs::*;
+use expr::reduce_prod;
+use expr::reduce_sum;
 
 
 impl MExpr {
+    pub fn trivial_reduce(self) -> MExpr {
+        match self.clone() {
+            MExpr::Sum(terms) => {
+                let terms = reduce_sum::unfold_nested(terms);
+
+                // Reduce every sub-expression
+                let terms: Vec<_> = terms.into_iter().map(|term| term.trivial_reduce()).collect();
+
+                if terms.is_empty() {
+                    MExpr::ConstNum(0)
+                } else if terms.len() == 1 {
+                    terms[0].clone()
+                } else {
+                    MExpr::Sum(terms)
+                }
+            }       
+            MExpr::Prod(terms) => {
+                let terms = reduce_prod::unfold_nested(terms);
+
+                // Reduce every sub-expression
+                let terms: Vec<_> = terms.into_iter().map(|term| term.trivial_reduce()).collect();
+
+                if terms.is_empty() {
+                    MExpr::ConstNum(1)
+                } else if terms.len() == 1 {
+                    terms[0].clone()
+                } else {
+                    MExpr::Prod(terms)
+                }
+            }
+            MExpr::Div(box num, box den) => {
+                MExpr::Div(box num.trivial_reduce(), box den.trivial_reduce())
+            }
+            _ => self
+        }
+    }
+
     /// Attemt to reduce an expression by factoring, evaluating expressions, etc.
     pub fn reduce(self, should_factor: bool) -> MExpr {
         match self.clone() {

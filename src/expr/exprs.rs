@@ -1,10 +1,5 @@
-use std::fmt::{Display, Error, Formatter};
 use std::cmp::Ordering;
 use std::boxed::Box;
-
-const CONSTANT_NAMES: &str = "ABCEDFGHIJKLMNOPQRSTUVWXYZ";
-const VAR_NAMES: &str = "abcedfghijklmnopqrstuvwxyz";
-
 
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
@@ -24,7 +19,7 @@ pub enum MExpr {
 
 impl MExpr {
     // ord_num is a helper for PartialOrd
-    fn ord_num(&self) -> u8 {
+    pub fn ord_num(&self) -> u8 {
         match *self {
             MExpr::Sum(_) => 0,
             MExpr::Prod(_) => 1,
@@ -106,7 +101,6 @@ impl PartialEq for MExpr {
     fn eq(&self, other: &MExpr) -> bool {
         match (self, other) {
             (&MExpr::ConstVar(x), &MExpr::ConstVar(y)) | (&MExpr::Var(x), &MExpr::Var(y)) => x == y,
-
             (&MExpr::ConstNum(x), &MExpr::ConstNum(y)) => x == y,
             (&MExpr::ConstFl(x), &MExpr::ConstFl(y)) => x == y,
             (&MExpr::Sum(ref x), &MExpr::Sum(ref y)) => x == y,
@@ -120,77 +114,3 @@ impl PartialEq for MExpr {
 }
 
 
-impl Display for MExpr {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
-        match *self {
-            MExpr::ConstVar(x) => match CONSTANT_NAMES.chars().nth(x as usize) {
-                Some(name) => write!(fmt, "{}", name),
-                None => write!(fmt, "‹{}›", x),
-            },
-            MExpr::ConstNum(x) => write!(fmt, "{}", x),
-            MExpr::ConstFl(x) => write!(fmt, "{}", x),
-            MExpr::Var(x) => match VAR_NAMES.chars().nth(x as usize) {
-                Some(name) => write!(fmt, "{}", name),
-                None => write!(fmt, "«{}»", x),
-            },
-            MExpr::Sum(ref terms) => {
-                let mut first = true;
-                for term in terms {
-                    if !first {
-                        write!(fmt, " + ")?
-                    }
-                    first = false;
-                    write!(fmt, "{}", term)?
-                }
-                Ok(())
-            }
-            MExpr::Prod(ref terms) => {
-                let mut first = true;
-                for term in terms {
-                    if !first {
-                        write!(fmt, "*")?
-                    }
-                    first = false;
-                    if term.ord_num() <= self.ord_num() {
-                        write!(fmt, "({})", term)?
-                    } else {
-                        write!(fmt, "{}", term)?
-                    }
-                }
-                Ok(())
-            }
-            MExpr::Exp(box ref base, box ref exp) => {
-                if base.ord_num() <= self.ord_num() {
-                    write!(fmt, "({})", base)?
-                } else {
-                    write!(fmt, "{}", base)?
-                }
-
-                write!(fmt, "^")?;
-
-                if exp.ord_num() <= self.ord_num() {
-                    write!(fmt, "({})", exp)?
-                } else {
-                    write!(fmt, "{}", exp)?
-                }
-                Ok(())
-            }
-            MExpr::Div(box ref base, box ref exp) => {
-                if base.ord_num() <= self.ord_num() {
-                    write!(fmt, "({})", base)?
-                } else {
-                    write!(fmt, "{}", base)?
-                }
-
-                write!(fmt, "/")?;
-
-                if exp.ord_num() <= self.ord_num() {
-                    write!(fmt, "({})", exp)?
-                } else {
-                    write!(fmt, "{}", exp)?
-                }
-                Ok(())
-            }
-        }
-    }
-}
