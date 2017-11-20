@@ -11,7 +11,7 @@ impl FromStr for MExpr {
     fn from_str(input: &str) -> Result<MExpr, Self::Err> {
         let input = input.trim();
 
-        if input.chars().next() == Some('(') {
+        if input.starts_with('(') {
             let mut is_parenthesised = true;
 
             let mut depth = 0u16;
@@ -41,7 +41,7 @@ impl FromStr for MExpr {
 
         // Is addition?
         let mut pluses: Vec<usize> = 
-            find_depth0(&input, |ch| ch == '+' || ch == '-', '(', ')')
+            find_depth0(input, |ch| ch == '+' || ch == '-', '(', ')')
                 .into_iter()
                 .filter(|x| x != &0usize)
                 .collect();
@@ -66,7 +66,7 @@ impl FromStr for MExpr {
         }
 
         // Is multiplication?
-        let mut times = find_depth0(&input, |ch| ch == '*', '(', ')');
+        let mut times = find_depth0(input, |ch| ch == '*', '(', ')');
         if !times.is_empty() {
             times.push(input.len());
             let mut factors = vec![];
@@ -84,7 +84,7 @@ impl FromStr for MExpr {
         }
 
         // Is division
-        let divs = find_depth0(&input, |ch| ch == '/', '(', ')');
+        let divs = find_depth0(input, |ch| ch == '/', '(', ')');
         if !divs.is_empty() {
             let num = input[..divs[0]].parse::<MExpr>()?;
             let den = input[divs[0] + 1..].parse::<MExpr>()?;
@@ -92,7 +92,7 @@ impl FromStr for MExpr {
         }
         
         // Is negation?
-        if input.chars().next() == Some('-') {
+        if input.starts_with('-') {
             let expr: MExpr = input[1..].parse()?;
             return Ok(MExpr::Prod(vec![MExpr::ConstNum(-1), expr]));
         }
@@ -102,14 +102,14 @@ impl FromStr for MExpr {
         if let Some(ch) = input.chars().next() {
             if ch.is_uppercase() && input.chars().count() == 1 {
                 return Ok(MExpr::ConstVar(
-                    (input.bytes().next().unwrap() - b'A') as u32,
+                    u32::from(input.bytes().next().unwrap() - b'A'),
                 ));
             }
         }
         // Is variable?
         if let Some(ch) = input.chars().next() {
             if ch.is_lowercase() && input.chars().count() == 1 {
-                return Ok(MExpr::Var((input.bytes().next().unwrap() - b'a') as u32));
+                return Ok(MExpr::Var(u32::from(input.bytes().next().unwrap() - b'a')));
             }
         }
         // Is number?
@@ -126,7 +126,7 @@ impl FromStr for MPattern {
     fn from_str(input: &str) -> Result<MPattern, Self::Err> {
         let input = input.trim();
 
-        if input.chars().next() == Some('(') {
+        if input.starts_with('(') {
             let mut is_parenthesised = true;
 
             let mut depth = 0u16;
@@ -156,7 +156,7 @@ impl FromStr for MPattern {
 
         // Is addition?
         let mut pluses: Vec<usize> = 
-            find_depth0(&input, |ch| ch == '+' || ch == '-', '(', ')')
+            find_depth0(input, |ch| ch == '+' || ch == '-', '(', ')')
                 .into_iter()
                 .filter(|x| x != &0usize)
                 .collect();
@@ -181,7 +181,7 @@ impl FromStr for MPattern {
         }
 
         // Is multiplication?
-        let mut times = find_depth0(&input, |ch| ch == '*', '(', ')');
+        let mut times = find_depth0(input, |ch| ch == '*', '(', ')');
         if !times.is_empty() {
             times.push(input.len());
             let mut factors = vec![];
@@ -199,7 +199,7 @@ impl FromStr for MPattern {
         }
 
         // Is division
-        let divs = find_depth0(&input, |ch| ch == '/', '(', ')');
+        let divs = find_depth0(input, |ch| ch == '/', '(', ')');
         if !divs.is_empty() {
             let num = input[..divs[0]].parse::<MPattern>()?;
             let den = input[divs[0] + 1..].parse::<MPattern>()?;
@@ -211,7 +211,7 @@ impl FromStr for MPattern {
         if let Some(ch) = input.chars().next() {
             if ch.is_uppercase() && input.chars().count() == 1 {
                 return Ok(MPattern::PConst(
-                    (input.bytes().next().unwrap() - b'A') as u32,
+                    u32::from(input.bytes().next().unwrap() - b'A'),
                 ));
             }
         }
@@ -219,7 +219,7 @@ impl FromStr for MPattern {
         // Is variable?
         if let Some(ch) = input.chars().next() {
             if ch.is_lowercase() && input.chars().count() == 1 {
-                return Ok(MPattern::PVar((input.bytes().next().unwrap() - b'a') as u32));
+                return Ok(MPattern::PVar(u32::from(input.bytes().next().unwrap() - b'a')));
             }
         }
 

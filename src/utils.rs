@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::hash::Hash;
 
-/// Merges two HashMaps, consuming the second. Gives an Err if both maps contians the same key
+/// Merges two `HashMaps`, consuming the second. Gives an Err if both maps contians the same key
 pub fn merge<A, B>(map: &mut HashMap<A, B, RandomState>, mut other: HashMap<A, B, RandomState>) -> Result<(), ()>
     where A: Eq + Hash {
     for (key, val) in other.drain() {
@@ -30,10 +30,8 @@ where
                 return vec![];
             }
             depth -= 1;
-        } else {
-            if depth == 0 && to_find(ch) {
-                res.push(i);
-            }
+        } else if depth == 0 && to_find(ch) {
+            res.push(i);
         }
     }
     res

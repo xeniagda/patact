@@ -98,14 +98,12 @@ impl MExpr {
 
                 if let Some( (num, den) ) = reduce_prod::unfold_division(terms.clone()) {
                     MExpr::Div(box MExpr::Prod(num), box MExpr::Prod(den)).reduce(should_factor)
+                } else if terms.is_empty() {
+                    MExpr::ConstNum(1)
+                } else if terms.len() == 1 {
+                    terms[0].clone()
                 } else {
-                    if terms.is_empty() {
-                        MExpr::ConstNum(1)
-                    } else if terms.len() == 1 {
-                        terms[0].clone()
-                    } else {
-                        MExpr::Prod(terms)
-                    }
+                    MExpr::Prod(terms)
                 }
             }
             MExpr::Div(box num, box den) => {
@@ -161,7 +159,7 @@ impl MExpr {
     /// perfect, won't find things like `gcd(x^2 - 4, x^2 - x - 6) == x - 2`
     pub fn gcd_div(&self, other: &MExpr) -> (MExpr, MExpr) {
         match (self.clone(), other.clone()) {
-            (MExpr::ConstNum(_), MExpr::ConstNum(_)) => self.simple_gcd_div(&other),
+            (MExpr::ConstNum(_), MExpr::ConstNum(_)) => self.simple_gcd_div(other),
             (MExpr::Prod(factors), x) | (x, MExpr::Prod(factors)) => {
                 let mut gcd = vec![];
                 let mut reduced_factors = vec![];
@@ -189,7 +187,7 @@ impl MExpr {
                         }
                     }
                 }
-                let (num, den) = if let &MExpr::Prod(_) = self {
+                let (num, den) = if let MExpr::Prod(_) = *self {
                     (
                         MExpr::Prod(reduced_factors).reduce(false),
                         reduced_div.reduce(false),
@@ -227,16 +225,13 @@ fn gcd(a: i64, b: i64) -> i64 {
         gcd(-a, b)
     } else if b < 0 {
         gcd(a, -b)
-    }
-    else {
-        if a == 0 {
-            // Check if a == 0 for all sub types
-            b
-        } else if a > b {
-            gcd(b, a)
-        } else {
-            gcd(b - a, a)
-        }
+    } else if a == 0 {
+        b
+    } else if a > b {
+        gcd(b, a)
+    } else {
+        gcd(b - a, a)
+
     }
 }
 

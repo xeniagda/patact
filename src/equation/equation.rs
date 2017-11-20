@@ -43,8 +43,8 @@ impl PartialEq for MEquation {
 
 impl Display for MEquation {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
-        match self {
-            &MEquation::Equal(ref lhs, ref rhs) => {
+        match *self {
+            MEquation::Equal(ref lhs, ref rhs) => {
                 write!(fmt, "{} = {}", lhs, rhs)
             }
         }
