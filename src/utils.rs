@@ -4,15 +4,17 @@ use std::collections::hash_map::RandomState;
 use std::hash::Hash;
 
 /// Merges two `HashMaps`, consuming the second. Gives an Err if both maps contians the same key
-pub fn merge<A, B>(map: &mut HashMap<A, B, RandomState>, mut other: HashMap<A, B, RandomState>) -> Result<(), ()>
-    where A: Eq + Hash {
+pub fn merge<A, B>(map: &mut HashMap<A, B, RandomState>, mut other: HashMap<A, B, RandomState>) -> Option<()>
+    where 
+        A: Eq + Hash,
+        B: Eq {
     for (key, val) in other.drain() {
-        if map.contains_key(&key) {
-            return Err(());
+        if map.get(&key).unwrap_or(&val) != &val {
+            return None;
         }
         map.insert(key, val);
     }
-    Ok(())
+    Some(())
 }
 
 /// Finds a character not wrappen in delimiters

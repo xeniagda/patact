@@ -67,13 +67,13 @@ fn repl_eq() -> Result<()> {
                 }
                 (Some(last), Ok(pattern)) => {
                     match pattern.bind(last) {
-                        Ok((mut consts, mut vars)) => {
+                        Some((mut consts, mut vars)) => {
                             println!("Consts:");
                             consts.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PConst(k), v));
                             println!("Vars:");
                             vars.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PVar(k), v));
                         }
-                        Err(_) => {
+                        None => {
                             eprintln!("Couldn't bind!");
                         }
                     }
@@ -96,12 +96,12 @@ fn repl_eq() -> Result<()> {
                 }
                 (Some(last_), Ok(patact)) => {
                     match patact.apply(last_) {
-                        Ok(eq) => {
+                        Some(eq) => {
                             println!("    Res: {}", eq);
                             println!("Reduced: {}", eq.clone().reduce());
                             last = Some(eq);
                         }
-                        Err(_) => {
+                        None => {
                             eprintln!("Couldn't Apply!");
                         }
                     }
@@ -163,13 +163,13 @@ fn repl_expr() -> Result<()> {
                 }
                 (Some(last), Ok(pattern)) => {
                     match pattern.bind(last) {
-                        Ok((mut consts, mut vars)) => {
+                        Some((mut consts, mut vars)) => {
                             println!("Consts:");
                             consts.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PConst(k), v));
                             println!("Vars:");
                             vars.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PVar(k), v));
                         }
-                        Err(_) => {
+                        None => {
                             eprintln!("Couldn't bind!");
                         }
                     }

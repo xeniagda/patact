@@ -55,7 +55,7 @@ impl MPattern {
 
     /// Tries to match a pattern to an expression, binding all variables in the pattern.
     /// Pseudo-example: `(const:a + var:b).bind(2x + 1) -> {const:a -> 1, var:b -> 2x}`
-    pub fn bind(self, expr: MExpr) -> Result<(HashMap<u32, MExpr>, HashMap<u32, MExpr>), ()> {
+    pub fn bind(self, expr: MExpr) -> Option<(HashMap<u32, MExpr>, HashMap<u32, MExpr>)> {
         let mut const_res: HashMap<u32, MExpr> = HashMap::new();
         let mut var_res:   HashMap<u32, MExpr> = HashMap::new();
         match (self.trivial_reduce(), expr.trivial_reduce()) {
@@ -63,12 +63,12 @@ impl MPattern {
                 if other.is_const() {
                     const_res.insert(n, other);
                 } else {
-                    return Err(());
+                    return None;
                 }
             }
             (MPattern::PVar(n), other) => {
                 if other.is_const() {
-                    return Err(());
+                    return None;
                 } else {
                     var_res.insert(n, other);
                 }
@@ -90,7 +90,7 @@ impl MPattern {
                             if worked { break }
                             for (i, elem) in terms.clone().into_iter().enumerate() {
                                 // println!("i = {}, pattern = {:?}, elem = {:?}", i, pterms[0], elem);
-                                if let Ok((const_res_f, var_res_f)) = pattern.clone().bind(elem.clone()) {
+                                if let Some((const_res_f, var_res_f)) = pattern.clone().bind(elem.clone()) {
                                     // println!("Matched, const = {:?}, var = {:?}", const_res_f, var_res_f);
 
                                     let mut other_terms: Vec<MExpr> = terms[0..i].to_vec();
@@ -104,7 +104,7 @@ impl MPattern {
                                     }
 
                                     // println!("rest pattern = {:?}, expr = {:?}", MPattern::PSum(other_pterms.clone()), MExpr::Sum(other_terms.clone()));
-                                    if let Ok((const_res_r, var_res_r)) =
+                                    if let Some((const_res_r, var_res_r)) =
                                         MPattern::PSum(other_pterms).bind(MExpr::Sum(other_terms)) {
                                             merge(&mut const_res, const_res_f)?;
                                             merge(&mut const_res, const_res_r)?;
@@ -119,10 +119,10 @@ impl MPattern {
                         }
                         // println!("worked = {}", worked);
                         if !worked {
-                            return Err(());
+                            return None;
                         }
                     }
-                    _ => return Err(())
+                    _ => return None
                 }
             }
             (MPattern::PProd(pterms), other) => {
@@ -134,7 +134,7 @@ impl MPattern {
                             if worked { break }
                             for (i, elem) in terms.clone().into_iter().enumerate() {
                                 // println!("i = {}, pattern = {:?}, elem = {:?}", i, pterms[0], elem);
-                                if let Ok((const_res_f, var_res_f)) = pattern.clone().bind(elem.clone()) {
+                                if let Some((const_res_f, var_res_f)) = pattern.clone().bind(elem.clone()) {
                                     // println!("Matched, const = {:?}, var = {:?}", const_res_f, var_res_f);
 
                                     let mut other_terms: Vec<MExpr> = terms[0..i].to_vec();
@@ -147,7 +147,7 @@ impl MPattern {
                                         other_pterms.push(a.clone());
                                     }
 
-                                    if let Ok((const_res_r, var_res_r)) =
+                                    if let Some((const_res_r, var_res_r)) =
                                         MPattern::PProd(other_pterms).bind(MExpr::Prod(other_terms)) {
                                             merge(&mut const_res, const_res_f)?;
                                             merge(&mut const_res, const_res_r)?;
@@ -160,15 +160,15 @@ impl MPattern {
                             }
                         }
                         if !worked {
-                            return Err(())
+                            return None;
                         }
                     }
-                    _ => return Err(())
+                    _ => return None
                 }
             }
-            _ => return Err(())
+            _ => return None
         };
-        Ok((const_res, var_res))
+        Some((const_res, var_res))
     }
 }
 #[test]
@@ -176,7 +176,7 @@ fn test_bind() {
     let pattern = MPattern::PProd(vec![MPattern::PConst(0), MPattern::PVar(0)]);
     let expr = MExpr::Prod(vec![MExpr::Var(0), MExpr::ConstNum(2)]);
     let bind = pattern.bind(expr);
-    assert!(bind.is_ok());
+    assert!(bind.is_some());
     let bind = bind.unwrap();
     assert_eq!(bind.0.get(&0), Some(&MExpr::ConstNum(2)));
     assert_eq!(bind.1.get(&0), Some(&MExpr::Var(0)));
@@ -184,7 +184,7 @@ fn test_bind() {
     let pattern = MPattern::PDiv(box MPattern::PConst(0), box MPattern::PVar(0));
     let expr = MExpr::Div(box MExpr::ConstNum(3), box MExpr::Prod(vec![ MExpr::ConstNum(2), MExpr::Var(21)] ));
     let bind = pattern.bind(expr);
-    assert!(bind.is_ok());
+    assert!(bind.is_some());
     let bind = bind.unwrap();
     assert_eq!(bind.0.get(&0), Some(&MExpr::ConstNum(3)));
     assert_eq!(bind.1.get(&0), Some(&MExpr::Prod(vec![ MExpr::ConstNum(2), MExpr::Var(21)] )));
@@ -192,7 +192,7 @@ fn test_bind() {
     let pattern = MPattern::PSum(vec![MPattern::PConst(0), MPattern::PVar(0)]);
     let expr = MExpr::Sum(vec![MExpr::Var(0), MExpr::ConstNum(2)]);
     let bind = pattern.bind(expr);
-    assert!(bind.is_ok());
+    assert!(bind.is_some());
     let bind = bind.unwrap();
     assert_eq!(bind.0.get(&0), Some(&MExpr::ConstNum(2)));
     assert_eq!(bind.1.get(&0), Some(&MExpr::Var(0)));

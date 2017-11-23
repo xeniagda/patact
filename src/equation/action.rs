@@ -29,66 +29,66 @@ pub struct PatternAction {
 impl PatternAction {
 
     /// Applies the action to both sides of an equation
-    pub fn apply(self, eq: MEquation) -> Result<MEquation, ()> {
+    pub fn apply(self, eq: MEquation) -> Option<MEquation> {
         let (consts, vars) = self.pattern.bind(eq.clone())?;
         match eq {
             MEquation::Equal(lhs, rhs) => {
                 match self.action {
                     Action::AddC(n) => match consts.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Sum(vec![x.clone(), lhs]),
                                 MExpr::Sum(vec![x.clone(), rhs]),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::SubC(n) => match consts.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Sum(vec![MExpr::Prod(vec![MExpr::ConstNum(-1), x.clone()]), lhs]),
                                 MExpr::Sum(vec![MExpr::Prod(vec![MExpr::ConstNum(-1), x.clone()]), rhs]),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::MulC(n) => match consts.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Prod(vec![x.clone(), lhs]),
                                 MExpr::Prod(vec![x.clone(), rhs]),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::DivC(n) => match consts.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Div(box lhs, box x.clone()),
                                 MExpr::Div(box rhs, box x.clone()),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::AddV(n) => match vars.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Sum(vec![x.clone(), lhs]),
                                 MExpr::Sum(vec![x.clone(), rhs]),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::SubV(n) => match vars.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Sum(vec![MExpr::Prod(vec![MExpr::ConstNum(-1), x.clone()]), lhs]),
                                 MExpr::Sum(vec![MExpr::Prod(vec![MExpr::ConstNum(-1), x.clone()]), rhs]),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::MulV(n) => match vars.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Prod(vec![x.clone(), lhs]),
                                 MExpr::Prod(vec![x.clone(), rhs]),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                     Action::DivV(n) => match vars.get(&n) {
-                        Some(x) => Ok(MEquation::Equal(
+                        Some(x) => Some(MEquation::Equal(
                                 MExpr::Div(box lhs, box x.clone()),
                                 MExpr::Div(box rhs, box x.clone()),
                                 )),
-                        None => Err(())
+                        None => None
                     },
                 }
             }

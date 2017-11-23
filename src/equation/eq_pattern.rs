@@ -23,7 +23,7 @@ impl EPattern {
     }
 
     /// Binds both sides of the pattern
-    pub fn bind(self, other: MEquation) -> Result<(HashMap<u32, MExpr>, HashMap<u32, MExpr>), ()> {
+    pub fn bind(self, other: MEquation) -> Option<(HashMap<u32, MExpr>, HashMap<u32, MExpr>)> {
         let mut const_res: HashMap<u32, MExpr> = HashMap::new();
         let mut var_res:   HashMap<u32, MExpr> = HashMap::new();
         match (self.trivial_reduce(), other.trivial_reduce()) {
@@ -36,6 +36,6 @@ impl EPattern {
                 merge(&mut var_res, v_r)?;
             }
         };
-        Ok((const_res, var_res))
+        Some((const_res, var_res))
     }
 }
