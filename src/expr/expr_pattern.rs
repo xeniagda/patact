@@ -6,11 +6,11 @@ use utils::merge;
 /// A pattern that matches variables and constants in expressions
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MPattern {
-    PConst(u32),
-    PVar(u32),
-    PSum(Vec<MPattern>),
-    PProd(Vec<MPattern>),
-    PDiv(Box<MPattern>, Box<MPattern>),
+    Const(u32),
+    Var(u32),
+    Sum(Vec<MPattern>),
+    Prod(Vec<MPattern>),
+    Div(Box<MPattern>, Box<MPattern>),
 }
 
 impl MExpr {
@@ -32,22 +32,48 @@ impl MPattern {
 
     pub fn trivial_reduce(self) -> MPattern {
         match self {
-            MPattern::PSum(terms) => {
-                if terms.len() == 1 {
-                    terms[0].clone()
+            MPattern::Sum(terms) => {
+                // Reduce each term
+                let terms = terms.into_iter().map(|term| term.trivial_reduce()).collect::<Vec<_>>();
+                
+                // Check for sums in terms
+                let mut res_terms = vec![];
+                for term in terms {
+                    match term {
+                        MPattern::Sum(subterms) =>
+                            res_terms.extend(subterms),
+                        x => res_terms.push(x)
+                    }
+                }
+
+                if res_terms.len() == 1 {
+                    res_terms[0].clone()
                 } else {
-                    MPattern::PSum(terms)
+                    MPattern::Sum(res_terms)
                 }
             }
-            MPattern::PProd(terms) => {
-                if terms.len() == 1 {
-                    terms[0].clone()
+            MPattern::Prod(factors) => {
+                // Reduce each factor
+                let factors = factors.into_iter().map(|factor| factor.trivial_reduce()).collect::<Vec<_>>();
+                
+                // Check for prods in factors
+                let mut res_factors = vec![];
+                for factor in factors {
+                    match factor {
+                        MPattern::Prod(subfactors) =>
+                            res_factors.extend(subfactors),
+                        x => res_factors.push(x)
+                    }
+                }
+
+                if res_factors.len() == 1 {
+                    res_factors[0].clone()
                 } else {
-                    MPattern::PProd(terms)
+                    MPattern::Prod(res_factors)
                 }
             }
-            MPattern::PDiv(box num, box den) => {
-                MPattern::PDiv(box num.trivial_reduce(), box den.trivial_reduce())
+            MPattern::Div(box num, box den) => {
+                MPattern::Div(box num.trivial_reduce(), box den.trivial_reduce())
             }
             x => x
         }
@@ -59,21 +85,21 @@ impl MPattern {
         let mut const_res: HashMap<u32, MExpr> = HashMap::new();
         let mut var_res:   HashMap<u32, MExpr> = HashMap::new();
         match (self.trivial_reduce(), expr.trivial_reduce()) {
-            (MPattern::PConst(n), other) => {
+            (MPattern::Const(n), other) => {
                 if other.is_const() {
                     const_res.insert(n, other);
                 } else {
                     return None;
                 }
             }
-            (MPattern::PVar(n), other) => {
+            (MPattern::Var(n), other) => {
                 if other.is_const() {
                     return None;
                 } else {
                     var_res.insert(n, other);
                 }
             }
-            (MPattern::PDiv(box a_pat, box b_pat), MExpr::Div(box a, box b)) => {
+            (MPattern::Div(box a_pat, box b_pat), MExpr::Div(box a, box b)) => {
                 let (const_res_a, var_res_a) = a_pat.bind(a)?;
                 let (const_res_b, var_res_b) = b_pat.bind(b)?;
                 merge(&mut const_res, const_res_a)?;
@@ -81,7 +107,7 @@ impl MPattern {
                 merge(&mut var_res, var_res_a)?;
                 merge(&mut var_res, var_res_b)?;
             }
-            (MPattern::PSum(pterms), other) => {
+            (MPattern::Sum(pterms), other) => {
                 // println!("pterms = {:?}, other = {:?}", pterms, other);
                 match other {
                     MExpr::Sum(terms) => {
@@ -103,9 +129,9 @@ impl MPattern {
                                         other_pterms.push(a.clone());
                                     }
 
-                                    // println!("rest pattern = {:?}, expr = {:?}", MPattern::PSum(other_pterms.clone()), MExpr::Sum(other_terms.clone()));
+                                    // println!("rest pattern = {:?}, expr = {:?}", MPattern::Sum(other_pterms.clone()), MExpr::Sum(other_terms.clone()));
                                     if let Some((const_res_r, var_res_r)) =
-                                        MPattern::PSum(other_pterms).bind(MExpr::Sum(other_terms)) {
+                                        MPattern::Sum(other_pterms).bind(MExpr::Sum(other_terms)) {
                                             merge(&mut const_res, const_res_f)?;
                                             merge(&mut const_res, const_res_r)?;
                                             merge(&mut var_res, var_res_f)?;
@@ -125,7 +151,7 @@ impl MPattern {
                     _ => return None
                 }
             }
-            (MPattern::PProd(pterms), other) => {
+            (MPattern::Prod(pterms), other) => {
                 // println!("pterms = {:?}, other = {:?}", pterms, other);
                 match other {
                     MExpr::Prod(terms) => {
@@ -148,7 +174,7 @@ impl MPattern {
                                     }
 
                                     if let Some((const_res_r, var_res_r)) =
-                                        MPattern::PProd(other_pterms).bind(MExpr::Prod(other_terms)) {
+                                        MPattern::Prod(other_pterms).bind(MExpr::Prod(other_terms)) {
                                             merge(&mut const_res, const_res_f)?;
                                             merge(&mut const_res, const_res_r)?;
                                             merge(&mut var_res, var_res_f)?;
@@ -173,21 +199,21 @@ impl MPattern {
     /// Used by `is_subpattern`
     fn convert_to_mexpr(self) -> MExpr {
         match self {
-            MPattern::PConst(x) => MExpr::ConstVar(x),
-            MPattern::PVar(x) => MExpr::Var(x),
-            MPattern::PSum(terms) => {
+            MPattern::Const(x) => MExpr::ConstVar(x),
+            MPattern::Var(x) => MExpr::Var(x),
+            MPattern::Sum(terms) => {
                 let converted_terms = terms.into_iter()
                         .map(|term| term.convert_to_mexpr())
                         .collect();
                 MExpr::Sum(converted_terms)
             }
-            MPattern::PProd(factors) => {
+            MPattern::Prod(factors) => {
                 let converted_factors = factors.into_iter()
                         .map(|factor| factor.convert_to_mexpr())
                         .collect();
                 MExpr::Sum(converted_factors)
             }
-            MPattern::PDiv(box den, box num) => {
+            MPattern::Div(box den, box num) => {
                 MExpr::Div(
                     box den.convert_to_mexpr(),
                     box num.convert_to_mexpr()
@@ -202,9 +228,74 @@ impl MPattern {
         other.bind(self.convert_to_mexpr()).is_some()
     }
 }
+
+impl MExpr {
+    pub fn generate_patterns_with_idx(&self, var_idx: u32) -> (Vec<MPattern>, u32) {
+        match self.clone() {
+            MExpr::ConstVar(_) 
+            | MExpr::ConstNum(_) 
+            | MExpr::ConstFl(_) => ( vec![MPattern::Const(var_idx) ], var_idx + 1 ),
+            MExpr::Var(_) => ( vec![MPattern::Var(var_idx)], var_idx + 1 ),
+            MExpr::Div(box num, box den) => {
+                let (num_pats, var_idx) = num.generate_patterns_with_idx(var_idx);
+                let (den_pats, var_idx) = den.generate_patterns_with_idx(var_idx);
+                let mut res = vec![];
+                for num_pat in num_pats {
+                    for den_pat in den_pats.clone() {
+                        res.push(MPattern::Div(box num_pat.clone(), box den_pat));
+                    }
+                }
+                if !self.is_const() {
+                    res.push(MPattern::Var(var_idx));
+                    ( res, var_idx + 1 )
+                } else {
+                    ( res, var_idx )
+                }
+            }
+            MExpr::Exp(box _, box _) => ( vec![], var_idx ),
+            MExpr::Sum(terms) => {
+                let (first, rest) = (terms[0].clone(), &terms[1..]);
+                let (first_pats, var_idx) = first.generate_patterns_with_idx(var_idx);
+                let (rest_pats, var_idx) = MExpr::Sum(rest.to_vec()).reduce(false).generate_patterns_with_idx(var_idx);
+
+                let mut res = vec![];
+                for first_pat in first_pats {
+                    for rest_pat in rest_pats.clone() {
+                        res.push(MPattern::Sum(vec![first_pat.clone(), rest_pat]).trivial_reduce());
+                    }
+                }
+                if !self.is_const() {
+                    res.push(MPattern::Var(var_idx));
+                    ( res, var_idx + 1 )
+                } else {
+                    ( res, var_idx )
+                }
+            }
+            MExpr::Prod(terms) => {
+                let (first, rest) = (terms[0].clone(), &terms[1..]);
+                let (first_pats, var_idx) = first.generate_patterns_with_idx(var_idx);
+                let (rest_pats, var_idx) = MExpr::Prod(rest.to_vec()).reduce(false).generate_patterns_with_idx(var_idx);
+
+                let mut res = vec![];
+                for first_pat in first_pats {
+                    for rest_pat in rest_pats.clone() {
+                        res.push(MPattern::Prod(vec![first_pat.clone(), rest_pat]).trivial_reduce());
+                    }
+                }
+                if !self.is_const() {
+                    res.push(MPattern::Var(var_idx));
+                    ( res, var_idx + 1 )
+                } else {
+                    ( res, var_idx )
+                }
+            }
+        }
+    }
+}
+
 #[test]
 fn test_bind() {
-    let pattern = MPattern::PProd(vec![MPattern::PConst(0), MPattern::PVar(0)]);
+    let pattern = MPattern::Prod(vec![MPattern::Const(0), MPattern::Var(0)]);
     let expr = MExpr::Prod(vec![MExpr::Var(0), MExpr::ConstNum(2)]);
     let bind = pattern.bind(expr);
     assert!(bind.is_some());
@@ -212,7 +303,7 @@ fn test_bind() {
     assert_eq!(bind.0.get(&0), Some(&MExpr::ConstNum(2)));
     assert_eq!(bind.1.get(&0), Some(&MExpr::Var(0)));
 
-    let pattern = MPattern::PDiv(box MPattern::PConst(0), box MPattern::PVar(0));
+    let pattern = MPattern::Div(box MPattern::Const(0), box MPattern::Var(0));
     let expr = MExpr::Div(box MExpr::ConstNum(3), box MExpr::Prod(vec![ MExpr::ConstNum(2), MExpr::Var(21)] ));
     let bind = pattern.bind(expr);
     assert!(bind.is_some());
@@ -220,7 +311,7 @@ fn test_bind() {
     assert_eq!(bind.0.get(&0), Some(&MExpr::ConstNum(3)));
     assert_eq!(bind.1.get(&0), Some(&MExpr::Prod(vec![ MExpr::ConstNum(2), MExpr::Var(21)] )));
 
-    let pattern = MPattern::PSum(vec![MPattern::PConst(0), MPattern::PVar(0)]);
+    let pattern = MPattern::Sum(vec![MPattern::Const(0), MPattern::Var(0)]);
     let expr = MExpr::Sum(vec![MExpr::Var(0), MExpr::ConstNum(2)]);
     let bind = pattern.bind(expr);
     assert!(bind.is_some());

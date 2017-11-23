@@ -72,9 +72,9 @@ fn repl_eq() -> Result<()> {
                     match pattern.bind(last) {
                         Some((mut consts, mut vars)) => {
                             println!("Consts:");
-                            consts.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PConst(k), v));
+                            consts.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::Const(k), v));
                             println!("Vars:");
-                            vars.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PVar(k), v));
+                            vars.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::Var(k), v));
                         }
                         None => {
                             eprintln!("Couldn't bind!");
@@ -85,8 +85,24 @@ fn repl_eq() -> Result<()> {
                     eprintln!("No last expression!");
                 }
             }
+        } else if line.starts_with(":pats") || line.starts_with(":Pats") {
+            if line.chars().nth(1) == Some('m') {
+                last = last.map(|e| e.reduce());
+            }
+            match last.clone() {
+                Some(last) => {
+                    let pats = last.generate_patterns();
+                    
+                    for pattern in pats {
+                        println!("\t{}", pattern);
+                    }
+                }
+                _ => {
+                    eprintln!("No last expression!");
+                }
+            }
         } else if line.starts_with(":do") || line.starts_with(":Do") {
-            if line.chars().nth(1) == Some('D') {
+            if line.chars().nth(1) == Some('d') {
                 last = last.map(|e| e.reduce());
             }
             let line = line[4..].trim();
@@ -168,9 +184,9 @@ fn repl_expr() -> Result<()> {
                     match pattern.bind(last) {
                         Some((mut consts, mut vars)) => {
                             println!("Consts:");
-                            consts.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PConst(k), v));
+                            consts.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::Const(k), v));
                             println!("Vars:");
-                            vars.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::PVar(k), v));
+                            vars.drain().for_each(|(k, v)| println!("\t{} = {}", MPattern::Var(k), v));
                         }
                         None => {
                             eprintln!("Couldn't bind!");

@@ -3,6 +3,7 @@ use equation::equation::MEquation;
 use expr::expr_pattern::MPattern;
 use expr::exprs::MExpr;
 use std::collections::HashMap;
+use std::fmt::{Display, Error, Formatter};
 
 use utils::merge;
 
@@ -10,6 +11,16 @@ use utils::merge;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EPattern {
     PEq(MPattern, MPattern)
+}
+
+impl Display for EPattern {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+        match self {
+            &EPattern::PEq(ref lhs, ref rhs) => {
+                write!(fmt, "{} = {}", lhs, rhs)
+            }
+        }
+    }
 }
 
 impl EPattern {
@@ -46,6 +57,25 @@ impl EPattern {
         match (self, other) {
             (EPattern::PEq(lhs1, rhs1), EPattern::PEq(lhs2, rhs2)) => {
                 lhs1.is_subpattern_of(lhs2) && rhs1.is_subpattern_of(rhs2)
+            }
+        }
+    }
+}
+
+impl MEquation {
+    pub fn generate_patterns(self) -> Vec<EPattern> {
+        match self {
+            MEquation::Equal(lhs, rhs) => {
+                let (lhs_pats, var_idx) = lhs.generate_patterns_with_idx(0);
+                let rhs_pats = rhs.generate_patterns_with_idx(var_idx).0;
+                let mut res = vec![];
+                for lhs_pat in lhs_pats {
+                    for rhs_pat in rhs_pats.clone() {
+                        res.push(EPattern::PEq(lhs_pat.clone(), rhs_pat));
+                    }
+                }
+                res
+
             }
         }
     }

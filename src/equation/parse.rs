@@ -65,14 +65,14 @@ impl FromStr for Action {
             let arg = input[space+1..].parse::<MPattern>()?;
 
             match (action, arg) {
-                ("add", MPattern::PConst(x)) => Ok(Action::AddC(x)),
-                ("sub", MPattern::PConst(x)) => Ok(Action::SubC(x)),
-                ("mul", MPattern::PConst(x)) => Ok(Action::MulC(x)),
-                ("div", MPattern::PConst(x)) => Ok(Action::DivC(x)),
-                ("add", MPattern::PVar(x))   => Ok(Action::AddV(x)),
-                ("sub", MPattern::PVar(x))   => Ok(Action::SubV(x)),
-                ("mul", MPattern::PVar(x))   => Ok(Action::MulV(x)),
-                ("div", MPattern::PVar(x))   => Ok(Action::DivV(x)),
+                ("add", MPattern::Const(x)) => Ok(Action::AddC(x)),
+                ("sub", MPattern::Const(x)) => Ok(Action::SubC(x)),
+                ("mul", MPattern::Const(x)) => Ok(Action::MulC(x)),
+                ("div", MPattern::Const(x)) => Ok(Action::DivC(x)),
+                ("add", MPattern::Var(x))   => Ok(Action::AddV(x)),
+                ("sub", MPattern::Var(x))   => Ok(Action::SubV(x)),
+                ("mul", MPattern::Var(x))   => Ok(Action::MulV(x)),
+                ("div", MPattern::Var(x))   => Ok(Action::DivV(x)),
                 _ => Err(("Couldn't read!".to_string(), 0))
             }
         } else {
@@ -87,6 +87,6 @@ fn test_patact() {
     let parsed = inp.parse::<PatternAction>();
     assert!(parsed.is_ok());
     assert_eq!(parsed.unwrap(),
-               PatternAction { pattern: EPattern::PEq(MPattern::PSum(vec![MPattern::PVar(0), MPattern::PConst(0)]), MPattern::PConst(1)), action: Action::SubC(0) }
+               PatternAction { pattern: EPattern::PEq(MPattern::Sum(vec![MPattern::Var(0), MPattern::Const(0)]), MPattern::Const(1)), action: Action::SubC(0) }
               )
 }

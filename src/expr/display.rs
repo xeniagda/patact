@@ -87,19 +87,19 @@ impl Display for MExpr {
 impl Display for MPattern {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         match self.clone() {
-            MPattern::PConst(id) => {
+            MPattern::Const(id) => {
                 match CONSTANT_NAMES.chars().nth(id as usize) {
                     Some(name) => write!(fmt, "{}", name),
                     None => write!(fmt, "‹{}›", id),
                 }
             }
-            MPattern::PVar(id) => {
+            MPattern::Var(id) => {
                 match VAR_NAMES.chars().nth(id as usize) {
                     Some(name) => write!(fmt, "{}", name),
                     None => write!(fmt, "‹{}›", id),
                 }
             }
-            MPattern::PSum(terms) => {
+            MPattern::Sum(terms) => {
                 let mut first = true;
                 for term in terms {
                     if !first {
@@ -110,7 +110,7 @@ impl Display for MPattern {
                 }
                 Ok(())
             }
-            MPattern::PProd(factors) => {
+            MPattern::Prod(factors) => {
                 let mut first = true;
                 for factor in factors {
                     if !first {
@@ -121,7 +121,7 @@ impl Display for MPattern {
                 }
                 Ok(())
             }
-            MPattern::PDiv(box num, box den) => {
+            MPattern::Div(box num, box den) => {
                 write!(fmt, "({}) / ({})", num, den)
             }
         }

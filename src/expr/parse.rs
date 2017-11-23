@@ -177,7 +177,7 @@ impl FromStr for MPattern {
                     term_start = term_end + 1;
                 }
             }
-            return Ok(MPattern::PSum(terms));
+            return Ok(MPattern::Sum(terms));
         }
 
         // Is multiplication?
@@ -195,7 +195,7 @@ impl FromStr for MPattern {
 
                 factor_start = factor_end + 1;
             }
-            return Ok(MPattern::PProd(factors));
+            return Ok(MPattern::Prod(factors));
         }
 
         // Is division
@@ -203,14 +203,14 @@ impl FromStr for MPattern {
         if !divs.is_empty() {
             let num = input[..divs[0]].parse::<MPattern>()?;
             let den = input[divs[0] + 1..].parse::<MPattern>()?;
-            return Ok(MPattern::PDiv(box num, box den));
+            return Ok(MPattern::Div(box num, box den));
         }
 
 
         // Is constant?
         if let Some(ch) = input.chars().next() {
             if ch.is_uppercase() && input.chars().count() == 1 {
-                return Ok(MPattern::PConst(
+                return Ok(MPattern::Const(
                     u32::from(input.bytes().next().unwrap() - b'A'),
                 ));
             }
@@ -219,7 +219,7 @@ impl FromStr for MPattern {
         // Is variable?
         if let Some(ch) = input.chars().next() {
             if ch.is_lowercase() && input.chars().count() == 1 {
-                return Ok(MPattern::PVar(u32::from(input.bytes().next().unwrap() - b'a')));
+                return Ok(MPattern::Var(u32::from(input.bytes().next().unwrap() - b'a')));
             }
         }
 
@@ -260,7 +260,7 @@ fn test_parse_mexpr() {
 
 #[test]
 fn test_parse_epattern() {
-    assert_eq!("A".parse::<MPattern>(), Ok(MPattern::PConst(0)));
-    assert_eq!("a".parse::<MPattern>(), Ok(MPattern::PVar(0)));
-    assert_eq!("a + X".parse::<MPattern>(), Ok(MPattern::PSum(vec![MPattern::PVar(0), MPattern::PConst(23)])));
+    assert_eq!("A".parse::<MPattern>(), Ok(MPattern::Const(0)));
+    assert_eq!("a".parse::<MPattern>(), Ok(MPattern::Var(0)));
+    assert_eq!("a + X".parse::<MPattern>(), Ok(MPattern::Sum(vec![MPattern::Var(0), MPattern::Const(23)])));
 }
