@@ -4,6 +4,9 @@ pub mod expr;
 pub mod equation;
 pub mod utils;
 
+#[cfg(test)]
+mod tests;
+
 use expr::exprs::MExpr;
 use expr::expr_pattern::MPattern;
 use equation::equation::MEquation;
