@@ -47,7 +47,7 @@ impl MExpr {
 
     /// Attemt to reduce an expression by factoring, evaluating expressions, etc.
     pub fn reduce(self, should_factor: bool) -> MExpr {
-        match self.clone() {
+        match self {
             MExpr::Sum(terms) => {
                 let terms = reduce_sum::unfold_nested(terms);
 
@@ -62,11 +62,15 @@ impl MExpr {
                     let gcd = terms
                         .iter()
                         .fold(terms[0].clone(), |acc, term| {
-                            let gcd = acc.gcd_div(term).0;
-                            if gcd == MExpr::ConstNum(1) {
-                                acc
+                            if acc == MExpr::ConstNum(1) {
+                                term.clone()
                             } else {
-                                gcd
+                                let gcd = acc.gcd_div(term).0;
+                                if gcd == MExpr::ConstNum(1) {
+                                    acc
+                                } else {
+                                    gcd
+                                }
                             }
                         });
 
@@ -86,8 +90,10 @@ impl MExpr {
                             }
                         }
 
+                        let should_factor_more = !factored.is_empty() && !not_factored.is_empty();
+
                         res_terms.push(MExpr::Prod(vec![gcd, MExpr::Sum(factored)]).reduce(false));
-                        res_terms.push(MExpr::Sum(not_factored).reduce(true));
+                        res_terms.push(MExpr::Sum(not_factored).reduce(should_factor_more));
                     }
                 } else {
                     res_terms.append(&mut terms);
@@ -262,6 +268,11 @@ fn test_gcd() {
     assert_eq!(
         MExpr::Div(box MExpr::ConstNum(10), box MExpr::ConstNum(5)).reduce(true),
         MExpr::ConstNum(2)
+        );
+
+    assert_eq!(
+        MExpr::Sum(vec![ MExpr::Div(box MExpr::ConstNum(1), box MExpr::Var(0)), MExpr::ConstNum(1) ]).reduce(true),
+        MExpr::Sum(vec![ MExpr::Div(box MExpr::ConstNum(1), box MExpr::Var(0)), MExpr::ConstNum(1) ])
         );
 
     assert_eq!(
