@@ -54,7 +54,7 @@ impl MPattern {
     }
 
     /// Tries to match a pattern to an expression, binding all variables in the pattern.
-    /// Pseudo-example: `(const:a + var:b).bind(2x + 1) -> {const:a -> 1, var:b -> 2x}`
+    /// Pseudo-example: `(A: const + b: var).bind(2x + 1) -> {A: const -> 1, b: var -> 2x}`
     pub fn bind(self, expr: MExpr) -> Option<(HashMap<u32, MExpr>, HashMap<u32, MExpr>)> {
         let mut const_res: HashMap<u32, MExpr> = HashMap::new();
         let mut var_res:   HashMap<u32, MExpr> = HashMap::new();
@@ -170,6 +170,37 @@ impl MPattern {
         };
         Some((const_res, var_res))
     }
+    /// Used by `is_subpattern`
+    fn convert_to_mexpr(self) -> MExpr {
+        match self {
+            MPattern::PConst(x) => MExpr::ConstVar(x),
+            MPattern::PVar(x) => MExpr::Var(x),
+            MPattern::PSum(terms) => {
+                let converted_terms = terms.into_iter()
+                        .map(|term| term.convert_to_mexpr())
+                        .collect();
+                MExpr::Sum(converted_terms)
+            }
+            MPattern::PProd(factors) => {
+                let converted_factors = factors.into_iter()
+                        .map(|factor| factor.convert_to_mexpr())
+                        .collect();
+                MExpr::Sum(converted_factors)
+            }
+            MPattern::PDiv(box den, box num) => {
+                MExpr::Div(
+                    box den.convert_to_mexpr(),
+                    box num.convert_to_mexpr()
+                    )
+            }
+        }
+    }
+    /// Checks if this pattern is a "sub-pattern" of the `other`.
+    /// A pattern is a sub-pattern of this if all the expressions matched by this pattern will be
+    /// matched by that pattern too.
+    pub fn is_subpattern_of(self, other: MPattern) -> bool {
+        other.bind(self.convert_to_mexpr()).is_some()
+    }
 }
 #[test]
 fn test_bind() {
@@ -196,5 +227,29 @@ fn test_bind() {
     let bind = bind.unwrap();
     assert_eq!(bind.0.get(&0), Some(&MExpr::ConstNum(2)));
     assert_eq!(bind.1.get(&0), Some(&MExpr::Var(0)));
+}
 
+#[test]
+fn test_subpatterns() {
+    let p1 = "a + b".parse::<MPattern>().unwrap().trivial_reduce();
+    let p2 = "a".parse::<MPattern>().unwrap().trivial_reduce();
+    assert!(p1.clone().is_subpattern_of(p2.clone()));
+    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+
+
+    let p1 = "a / X + A * b".parse::<MPattern>().unwrap().trivial_reduce();
+    let p2 = "a + b".parse::<MPattern>().unwrap().trivial_reduce();
+    assert!(p1.clone().is_subpattern_of(p2.clone()));
+    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+
+
+    let p1 = "(a + X + b) / a".parse::<MPattern>().unwrap().trivial_reduce();
+    let p2 = "(a + b) / a".parse::<MPattern>().unwrap().trivial_reduce();
+    assert!(p1.clone().is_subpattern_of(p2.clone()));
+    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+
+    let p1 = "(a + X + b) / (a + B)".parse::<MPattern>().unwrap().trivial_reduce();
+    let p2 = "(a + b) / a".parse::<MPattern>().unwrap().trivial_reduce();
+    assert!(!p1.clone().is_subpattern_of(p2.clone()));
+    assert!(!p2.clone().is_subpattern_of(p1.clone()));
 }
