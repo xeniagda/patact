@@ -61,20 +61,33 @@ impl MExpr {
                     // Factor the rest
                     let gcd = terms
                         .iter()
-                        .fold(terms[0].clone(), |acc, term| acc.gcd_div(term).0);
-                    if gcd == MExpr::ConstNum(1) {
+                        .fold(terms[0].clone(), |acc, term| {
+                            let gcd = acc.gcd_div(term).0;
+                            if gcd == MExpr::ConstNum(1) {
+                                acc
+                            } else {
+                                gcd
+                            }
+                        });
+
+                    if gcd == MExpr::ConstNum(1) || terms.len() == 1 {
                         res_terms.append(&mut terms);
                     } else {
-                        let terms: Vec<_> = terms
-                            .iter()
-                            .map(|x| x.gcd_div(&gcd).1.reduce(false))
-                            .collect();
+                        let mut factored = vec![];
+                        let mut not_factored = vec![];
+                        
+                        for term in terms {
+                            let (gcd, div) = term.gcd_div(&gcd);
 
-                        if terms.len() == 1 {
-                            res_terms.push(MExpr::Prod(vec![gcd, terms[0].clone()]).reduce(false));
-                        } else {
-                            res_terms.push(MExpr::Prod(vec![gcd, MExpr::Sum(terms)]).reduce(false));
+                            if gcd == MExpr::ConstNum(1) {
+                                not_factored.push(term);
+                            } else {
+                                factored.push(div);
+                            }
                         }
+
+                        res_terms.push(MExpr::Prod(vec![gcd, MExpr::Sum(factored)]).reduce(false));
+                        res_terms.push(MExpr::Sum(not_factored).reduce(true));
                     }
                 } else {
                     res_terms.append(&mut terms);
@@ -84,7 +97,11 @@ impl MExpr {
                 } else if res_terms.len() == 1 {
                     res_terms[0].clone()
                 } else {
-                    MExpr::Sum(res_terms)
+                    if should_factor {
+                        MExpr::Sum(res_terms).reduce(false)
+                    } else {
+                        MExpr::Sum(res_terms)
+                    }
                 }
             }
             MExpr::Prod(terms) => {

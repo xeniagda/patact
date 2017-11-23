@@ -57,8 +57,8 @@ impl PatternAction {
                     },
                     Action::DivC(n) => match consts.get(&n) {
                         Some(x) => Ok(MEquation::Equal(
-                                MExpr::Div(box x.clone(), box lhs),
-                                MExpr::Div(box x.clone(), box rhs),
+                                MExpr::Div(box lhs, box x.clone()),
+                                MExpr::Div(box rhs, box x.clone()),
                                 )),
                         None => Err(())
                     },
@@ -85,8 +85,8 @@ impl PatternAction {
                     },
                     Action::DivV(n) => match vars.get(&n) {
                         Some(x) => Ok(MEquation::Equal(
-                                MExpr::Div(box x.clone(), box lhs),
-                                MExpr::Div(box x.clone(), box rhs),
+                                MExpr::Div(box lhs, box x.clone()),
+                                MExpr::Div(box rhs, box x.clone()),
                                 )),
                         None => Err(())
                     },
