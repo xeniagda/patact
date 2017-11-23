@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::boxed::Box;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(dead_code)]
 pub enum MExpr {
     // A math expression
@@ -97,20 +97,20 @@ impl PartialOrd for MExpr {
 
 impl Eq for MExpr {}
 
-impl PartialEq for MExpr {
-    fn eq(&self, other: &MExpr) -> bool {
-        match (self, other) {
-            (&MExpr::ConstVar(x), &MExpr::ConstVar(y)) | (&MExpr::Var(x), &MExpr::Var(y)) => x == y,
-            (&MExpr::ConstNum(x), &MExpr::ConstNum(y)) => x == y,
-            (&MExpr::ConstFl(x), &MExpr::ConstFl(y)) => x == y,
-            (&MExpr::Sum(ref x), &MExpr::Sum(ref y)) => x == y,
-            (&MExpr::Prod(ref x), &MExpr::Prod(ref y)) => x == y,
-            (&MExpr::Exp(box ref x, box ref y), &MExpr::Exp(box ref x_, box ref y_)) => {
-                x == x_ && y == y_
-            }
-            (&_, &_) => false,
-        }
-    }
-}
+// impl PartialEq for MExpr {
+//     fn eq(&self, other: &MExpr) -> bool {
+//         match (self, other) {
+//             (&MExpr::ConstVar(x), &MExpr::ConstVar(y)) | (&MExpr::Var(x), &MExpr::Var(y)) => x == y,
+//             (&MExpr::ConstNum(x), &MExpr::ConstNum(y)) => x == y,
+//             (&MExpr::ConstFl(x), &MExpr::ConstFl(y)) => x == y,
+//             (&MExpr::Sum(ref x), &MExpr::Sum(ref y)) => x == y,
+//             (&MExpr::Prod(ref x), &MExpr::Prod(ref y)) => x == y,
+//             (&MExpr::Exp(box ref x, box ref y), &MExpr::Exp(box ref x_, box ref y_)) => {
+//                 x == x_ && y == y_
+//             }
+//             (&_, &_) => false,
+//         }
+//     }
+// }
 
 
