@@ -26,6 +26,67 @@ impl MExpr {
             _ => true
         }
     }
+
+    pub fn generate_patterns(&self) -> Vec<MPattern> {
+        self.generate_patterns_with_idx(0).0
+    }
+
+    pub fn generate_patterns_with_idx(&self, var_idx: u32) -> (Vec<MPattern>, u32) {
+        match self.clone() {
+            MExpr::ConstVar(_) 
+            | MExpr::ConstNum(_) 
+            | MExpr::ConstFl(_) => ( vec![MPattern::Const(var_idx) ], var_idx + 1 ),
+            MExpr::Var(_) => ( vec![MPattern::Var(var_idx)], var_idx + 1 ),
+            MExpr::Div(box num, box den) => {
+                let mut res = vec![];
+                if !self.is_const() {
+                    res.push(MPattern::Var(var_idx));
+                }
+                let (num_pats, var_idx) = num.generate_patterns_with_idx(var_idx);
+                let (den_pats, var_idx) = den.generate_patterns_with_idx(var_idx);
+                for num_pat in num_pats {
+                    for den_pat in den_pats.clone() {
+                        res.push(MPattern::Div(box num_pat.clone(), box den_pat));
+                    }
+                }
+                ( res, var_idx )
+            }
+            MExpr::Exp(box _, box _) => ( vec![], var_idx ),
+            MExpr::Sum(terms) => {
+                let mut res = vec![];
+                if !self.is_const() {
+                    res.push(MPattern::Var(var_idx));
+                }
+                let (first, rest) = (terms[0].clone(), &terms[1..]);
+                let (first_pats, var_idx) = first.generate_patterns_with_idx(var_idx);
+                let (rest_pats, var_idx) = MExpr::Sum(rest.to_vec()).reduce(false).generate_patterns_with_idx(var_idx);
+
+                for first_pat in first_pats {
+                    for rest_pat in rest_pats.clone() {
+                        res.push(MPattern::Sum(vec![first_pat.clone(), rest_pat]).trivial_reduce());
+                    }
+                }
+                ( res, var_idx )
+            }
+            MExpr::Prod(terms) => {
+                let mut res = vec![];
+                if !self.is_const() {
+                    res.push(MPattern::Var(var_idx));
+                }
+                let (first, rest) = (terms[0].clone(), &terms[1..]);
+                let (first_pats, var_idx) = first.generate_patterns_with_idx(var_idx);
+                let (rest_pats, var_idx) = MExpr::Prod(rest.to_vec()).reduce(false).generate_patterns_with_idx(var_idx);
+
+                for first_pat in first_pats {
+                    for rest_pat in rest_pats.clone() {
+                        res.push(MPattern::Prod(vec![first_pat.clone(), rest_pat]).trivial_reduce());
+                    }
+                }
+                ( res, var_idx )
+            }
+        }
+    }
+
 }
 
 impl MPattern {
@@ -79,8 +140,35 @@ impl MPattern {
         }
     }
 
+    pub fn get_free(self) -> (Vec<u32>, Vec<u32>) {
+        match self {
+            MPattern::Const(x) => ( vec![x], vec![] ),
+            MPattern::Var(x) => ( vec![], vec![x] ),
+            MPattern::Sum(terms)
+            | MPattern::Prod(terms) => {
+                let mut consts = vec![];
+                let mut vars = vec![];
+                for term in terms {
+                    let (mut tconsts, mut tvars) = term.get_free();
+                    consts.append(&mut tconsts);
+                    vars.append(&mut tvars);
+                }
+                (consts, vars)
+            }
+            MPattern::Div(box num, box den) => {
+                let (mut consts, mut vars) = num.get_free();
+                let (mut dconsts, mut dvars) = den.get_free();
+                consts.append(&mut dconsts);
+                vars.append(&mut dvars);
+                (consts, vars)
+            }
+        }
+    }
+
     /// Tries to match a pattern to an expression, binding all variables in the pattern.
     /// Pseudo-example: `(A: const + b: var).bind(2x + 1) -> {A: const -> 1, b: var -> 2x}`
+    ///
+    /// `.0` is the consts, `.1` is the vars.
     pub fn bind(self, expr: MExpr) -> Option<(HashMap<u32, MExpr>, HashMap<u32, MExpr>)> {
         let mut const_res: HashMap<u32, MExpr> = HashMap::new();
         let mut var_res:   HashMap<u32, MExpr> = HashMap::new();
@@ -226,70 +314,6 @@ impl MPattern {
     /// matched by that pattern too.
     pub fn is_subpattern_of(self, other: MPattern) -> bool {
         other.bind(self.convert_to_mexpr()).is_some()
-    }
-}
-
-impl MExpr {
-    pub fn generate_patterns_with_idx(&self, var_idx: u32) -> (Vec<MPattern>, u32) {
-        match self.clone() {
-            MExpr::ConstVar(_) 
-            | MExpr::ConstNum(_) 
-            | MExpr::ConstFl(_) => ( vec![MPattern::Const(var_idx) ], var_idx + 1 ),
-            MExpr::Var(_) => ( vec![MPattern::Var(var_idx)], var_idx + 1 ),
-            MExpr::Div(box num, box den) => {
-                let (num_pats, var_idx) = num.generate_patterns_with_idx(var_idx);
-                let (den_pats, var_idx) = den.generate_patterns_with_idx(var_idx);
-                let mut res = vec![];
-                for num_pat in num_pats {
-                    for den_pat in den_pats.clone() {
-                        res.push(MPattern::Div(box num_pat.clone(), box den_pat));
-                    }
-                }
-                if !self.is_const() {
-                    res.push(MPattern::Var(var_idx));
-                    ( res, var_idx + 1 )
-                } else {
-                    ( res, var_idx )
-                }
-            }
-            MExpr::Exp(box _, box _) => ( vec![], var_idx ),
-            MExpr::Sum(terms) => {
-                let (first, rest) = (terms[0].clone(), &terms[1..]);
-                let (first_pats, var_idx) = first.generate_patterns_with_idx(var_idx);
-                let (rest_pats, var_idx) = MExpr::Sum(rest.to_vec()).reduce(false).generate_patterns_with_idx(var_idx);
-
-                let mut res = vec![];
-                for first_pat in first_pats {
-                    for rest_pat in rest_pats.clone() {
-                        res.push(MPattern::Sum(vec![first_pat.clone(), rest_pat]).trivial_reduce());
-                    }
-                }
-                if !self.is_const() {
-                    res.push(MPattern::Var(var_idx));
-                    ( res, var_idx + 1 )
-                } else {
-                    ( res, var_idx )
-                }
-            }
-            MExpr::Prod(terms) => {
-                let (first, rest) = (terms[0].clone(), &terms[1..]);
-                let (first_pats, var_idx) = first.generate_patterns_with_idx(var_idx);
-                let (rest_pats, var_idx) = MExpr::Prod(rest.to_vec()).reduce(false).generate_patterns_with_idx(var_idx);
-
-                let mut res = vec![];
-                for first_pat in first_pats {
-                    for rest_pat in rest_pats.clone() {
-                        res.push(MPattern::Prod(vec![first_pat.clone(), rest_pat]).trivial_reduce());
-                    }
-                }
-                if !self.is_const() {
-                    res.push(MPattern::Var(var_idx));
-                    ( res, var_idx + 1 )
-                } else {
-                    ( res, var_idx )
-                }
-            }
-        }
     }
 }
 

@@ -1,5 +1,6 @@
 
 use equation::equation::MEquation;
+use equation::action::{PatternAction, Action};
 use expr::expr_pattern::MPattern;
 use expr::exprs::MExpr;
 use std::collections::HashMap;
@@ -60,9 +61,45 @@ impl EPattern {
             }
         }
     }
+
+    /// Gets all the variables and constants in the pattern
+    pub fn get_free(self) -> (Vec<u32>, Vec<u32>) {
+        match self {
+            EPattern::PEq(lhs, rhs) => {
+                let (mut lconsts, mut lvars) = lhs.get_free();
+                let (mut rconsts, mut rvars) = rhs.get_free();
+                lconsts.append(&mut rconsts);
+                lvars.append(&mut rvars);
+                (lconsts, lvars)
+            }
+        }
+    }
 }
 
 impl MEquation {
+
+    /// Generates patacts from this equation
+    pub fn generate_patacts(self) -> Vec<PatternAction> {
+        let pats = self.generate_patterns();
+        let mut patacts = vec![];
+        for pat in pats {
+            let (consts, vars) = pat.clone().get_free();
+            for var in vars {
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::AddV(var) } );
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::SubV(var) } );
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::MulV(var) } );
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::DivV(var) } );
+            }
+            for constant in consts {
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::AddC(constant) } );
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::SubC(constant) } );
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::MulC(constant) } );
+                patacts.push( PatternAction { pattern: pat.clone(), action: Action::DivC(constant) } );
+            }
+        }
+        patacts
+    }
+
     pub fn generate_patterns(self) -> Vec<EPattern> {
         match self {
             MEquation::Equal(lhs, rhs) => {

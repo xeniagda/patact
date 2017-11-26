@@ -91,7 +91,7 @@ fn repl_eq() -> Result<()> {
             }
             match last.clone() {
                 Some(last) => {
-                    let pats = last.generate_patterns();
+                    let pats = last.generate_patacts();
                     
                     for pattern in pats {
                         println!("\t{}", pattern);
@@ -114,6 +114,7 @@ fn repl_eq() -> Result<()> {
                     eprintln!("Error: {:?} at {}", msg, idx);
                 }
                 (Some(last_), Ok(patact)) => {
+                    println!(" Patact: {}", patact);
                     match patact.apply(last_) {
                         Some(eq) => {
                             println!("    Res: {}", eq);
@@ -191,6 +192,22 @@ fn repl_expr() -> Result<()> {
                         None => {
                             eprintln!("Couldn't bind!");
                         }
+                    }
+                }
+                _ => {
+                    eprintln!("No last expression!");
+                }
+            }
+        } else if line.starts_with(":pats") || line.starts_with(":Pats") {
+            if line.chars().nth(1) == Some('m') {
+                last = last.map(|e| e.reduce(true));
+            }
+            match last.clone() {
+                Some(last) => {
+                    let pats = last.generate_patterns();
+                    
+                    for pattern in pats {
+                        println!("\t{}", pattern);
                     }
                 }
                 _ => {
