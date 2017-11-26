@@ -299,7 +299,7 @@ impl MPattern {
                 let converted_factors = factors.into_iter()
                         .map(|factor| factor.convert_to_mexpr())
                         .collect();
-                MExpr::Sum(converted_factors)
+                MExpr::Prod(converted_factors)
             }
             MPattern::Div(box den, box num) => {
                 MExpr::Div(
@@ -312,8 +312,8 @@ impl MPattern {
     /// Checks if this pattern is a "sub-pattern" of the `other`.
     /// A pattern is a sub-pattern of this if all the expressions matched by this pattern will be
     /// matched by that pattern too.
-    pub fn is_subpattern_of(self, other: MPattern) -> bool {
-        other.bind(self.convert_to_mexpr()).is_some()
+    pub fn is_subpattern_of(&self, other: &MPattern) -> bool {
+        other.clone().bind(self.clone().convert_to_mexpr()).is_some()
     }
 }
 
@@ -348,23 +348,28 @@ fn test_bind() {
 fn test_subpatterns() {
     let p1 = "a + b".parse::<MPattern>().unwrap().trivial_reduce();
     let p2 = "a".parse::<MPattern>().unwrap().trivial_reduce();
-    assert!(p1.clone().is_subpattern_of(p2.clone()));
-    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+    assert!(p1.clone().is_subpattern_of(&p2));
+    assert!(!p2.clone().is_subpattern_of(&p1));
 
 
     let p1 = "a / X + A * b".parse::<MPattern>().unwrap().trivial_reduce();
     let p2 = "a + b".parse::<MPattern>().unwrap().trivial_reduce();
-    assert!(p1.clone().is_subpattern_of(p2.clone()));
-    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+    assert!(p1.clone().is_subpattern_of(&p2));
+    assert!(!p2.clone().is_subpattern_of(&p1));
 
 
     let p1 = "(a + X + b) / a".parse::<MPattern>().unwrap().trivial_reduce();
     let p2 = "(a + b) / a".parse::<MPattern>().unwrap().trivial_reduce();
-    assert!(p1.clone().is_subpattern_of(p2.clone()));
-    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+    assert!(p1.clone().is_subpattern_of(&p2));
+    assert!(!p2.clone().is_subpattern_of(&p1));
 
     let p1 = "(a + X + b) / (a + B)".parse::<MPattern>().unwrap().trivial_reduce();
     let p2 = "(a + b) / a".parse::<MPattern>().unwrap().trivial_reduce();
-    assert!(!p1.clone().is_subpattern_of(p2.clone()));
-    assert!(!p2.clone().is_subpattern_of(p1.clone()));
+    assert!(!p1.clone().is_subpattern_of(&p2));
+    assert!(!p2.clone().is_subpattern_of(&p1));
+
+    let p1 = "a * A".parse::<MPattern>().unwrap().trivial_reduce();
+    let p2 = "a + A".parse::<MPattern>().unwrap().trivial_reduce();
+    assert!(!p1.clone().is_subpattern_of(&p2));
+    assert!(!p2.clone().is_subpattern_of(&p1));
 }

@@ -60,21 +60,23 @@ impl FromStr for Action {
 
     fn from_str(input: &str) -> Result<Action, Self::Err> {
         let input = input.trim();
-        if let Some(space) = find_depth0(input, |c| c == ' ', '(', ')').into_iter().nth(0) {
-            let action = &input[..space];
-            let arg = input[space+1..].parse::<MPattern>()?;
+        if input.len() == 2 {
+            let action = input.chars().nth(0).unwrap();
+            let arg = input[1..].parse::<MPattern>()?;
 
             match (action, arg) {
-                ("add", MPattern::Const(x)) => Ok(Action::AddC(x)),
-                ("sub", MPattern::Const(x)) => Ok(Action::SubC(x)),
-                ("mul", MPattern::Const(x)) => Ok(Action::MulC(x)),
-                ("div", MPattern::Const(x)) => Ok(Action::DivC(x)),
-                ("add", MPattern::Var(x))   => Ok(Action::AddV(x)),
-                ("sub", MPattern::Var(x))   => Ok(Action::SubV(x)),
-                ("mul", MPattern::Var(x))   => Ok(Action::MulV(x)),
-                ("div", MPattern::Var(x))   => Ok(Action::DivV(x)),
-                _ => Err(("Couldn't read!".to_string(), 0))
+                ('+', MPattern::Const(x)) => Ok(Action::AddC(x)),
+                ('-', MPattern::Const(x)) => Ok(Action::SubC(x)),
+                ('*', MPattern::Const(x)) => Ok(Action::MulC(x)),
+                ('/', MPattern::Const(x)) => Ok(Action::DivC(x)),
+                ('+', MPattern::Var(x))   => Ok(Action::AddV(x)),
+                ('-', MPattern::Var(x))   => Ok(Action::SubV(x)),
+                ('*', MPattern::Var(x))   => Ok(Action::MulV(x)),
+                ('/', MPattern::Var(x))   => Ok(Action::DivV(x)),
+                _                         => Err(("Couldn't read!".to_string(), 0))
             }
+        } else if input == "done" {
+            Ok(Action::DoNothing())
         } else {
             Err(("Couldn't read!".to_string(), 0))
         }
@@ -83,7 +85,7 @@ impl FromStr for Action {
 
 #[test]
 fn test_patact() {
-    let inp = "a + A = B > sub A";
+    let inp = "a + A = B > -A";
     let parsed = inp.parse::<PatternAction>();
     assert!(parsed.is_ok());
     assert_eq!(parsed.unwrap(),

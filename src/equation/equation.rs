@@ -53,5 +53,8 @@ impl Display for MEquation {
 
 #[test]
 fn test() {
-    assert_eq!(MEquation::Equal(MExpr::ConstNum(1), MExpr::ConstNum(2)), MEquation::Equal(MExpr::ConstNum(1), MExpr::ConstNum(2)));
+    assert_eq!(
+        MEquation::Equal(MExpr::ConstNum(1), MExpr::ConstNum(2)),
+        MEquation::Equal(MExpr::ConstNum(1), MExpr::ConstNum(2))
+        );
 }

@@ -21,6 +21,8 @@ pub enum Action {
     SubV(u32),
     MulV(u32),
     DivV(u32),
+
+    DoNothing()
 }
 
 /// A way to take actions based of patterns
@@ -94,6 +96,7 @@ impl PatternAction {
                                 )),
                         None => None
                     },
+                    Action::DoNothing() => Some(MEquation::Equal(lhs, rhs))
                 }
             }
         }
@@ -149,6 +152,7 @@ impl Display for Action {
                     Some(name) => write!(fmt, "/{}", name),
                     None => write!(fmt, "/‹{}›", x),
                 },
+            Action::DoNothing() => write!(fmt, "done")
         }
     }
 }

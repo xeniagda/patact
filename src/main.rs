@@ -3,6 +3,7 @@
 pub mod expr;
 pub mod equation;
 pub mod utils;
+pub mod solver;
 
 #[cfg(test)]
 mod tests;
