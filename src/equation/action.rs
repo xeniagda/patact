@@ -1,7 +1,11 @@
-
 use equation::equation::MEquation;
 use expr::exprs::MExpr;
 use equation::eq_pattern::EPattern;
+
+use std::fmt::{Display, Error, Formatter};
+
+const CONSTANT_NAMES: &str = "ABCEDFGHIJKLMNOPQRSTUVWXYZ";
+const VAR_NAMES: &str = "abcedfghijklmnopqrstuvwxyz";
 
 
 /// A simple action that can be applied to both sides of an equation.
@@ -92,6 +96,59 @@ impl PatternAction {
                     },
                 }
             }
+        }
+    }
+}
+
+impl Display for PatternAction {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+        write!(fmt, "{} > {}", self.pattern, self.action)
+    }
+}
+
+impl Display for Action {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+        match *self {
+            Action::AddC(x) => 
+                match CONSTANT_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "+{}", name),
+                    None => write!(fmt, "+‹{}›", x),
+                },
+            Action::SubC(x) => 
+                match CONSTANT_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "-{}", name),
+                    None => write!(fmt, "-‹{}›", x),
+                },
+            Action::MulC(x) => 
+                match CONSTANT_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "*{}", name),
+                    None => write!(fmt, "*‹{}›", x),
+                },
+            Action::DivC(x) => 
+                match CONSTANT_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "/{}", name),
+                    None => write!(fmt, "/‹{}›", x),
+                },
+            Action::AddV(x) => 
+                match VAR_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "+{}", name),
+                    None => write!(fmt, "+‹{}›", x),
+                },
+            Action::SubV(x) => 
+                match VAR_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "-{}", name),
+                    None => write!(fmt, "-‹{}›", x),
+                },
+            Action::MulV(x) => 
+                match VAR_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "*{}", name),
+                    None => write!(fmt, "*‹{}›", x),
+                },
+            Action::DivV(x) => 
+                match VAR_NAMES.chars().nth(x as usize) {
+                    Some(name) => write!(fmt, "/{}", name),
+                    None => write!(fmt, "/‹{}›", x),
+                },
         }
     }
 }
